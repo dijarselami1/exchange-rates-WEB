@@ -1,0 +1,115 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+<p>Start Date (dd.mm.yyyy format)</p> 
+<input id="startID" @bind="startInput" />
+
+<p>End Date (dd.mm.yyyy format)</p> 
+<input id="endID" @bind="endInput"/>
+
+<br />
+<button @onclick="ConfirmAndFetch">Get Data</button>
+
+
+@if (jsonListData == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Country</th>
+                <th>Currency</th>
+                <th>Rate</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in jsonListData)
+            {
+                <tr>
+                    <td>@item.drzavaAng</td>
+                    <td>@item.valuta</td>
+                    <td>@item.sreden</td>
+                    <td>@item.date</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code{
+    private string startInput;
+    private string endInput;
+    private string startDate = "04.02.2025";
+    private string endDate = "05.02.2025";
+    private List<exchangeData> jsonListData;
+    //  protected override async Task OnInitializedAsync()
+    // {
+    //      await FetchData(startDate,endDate);
+    // }
+
+    private async Task ConfirmAndFetch()
+    {
+
+        var startDate = startInput;
+        var endDate = endInput;
+
+        await FetchData(startDate, endDate);
+    }
+    public async Task FetchData(string dateStart, string dateEnd)
+    {
+        var httpClient = new HttpClient();
+        //create new http client
+
+        //make get request to the website
+        try {
+            var call = await httpClient.GetAsync("https://www.nbrm.mk/KLServiceNOV/GetExchangeRate?StartDate="+dateStart+"&EndDate="+dateEnd+"&format=json");
+
+            var data = await call.Content.ReadAsStringAsync();
+
+            dynamic json = JsonConvert.DeserializeObject(data);
+
+            jsonListData = createJsonClass(json);
+
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+
+    }
+
+    // INITIALISE JSON CLASS
+    public class exchangeData
+    {
+        public string valuta { get; set; }
+        public double sreden { get; set; }
+        public string drzavaAng { get; set; }
+        public string date { get; set; }
+
+    }
+
+    public List<exchangeData> createJsonClass(dynamic data)
+    {
+        List<exchangeData> listData = new List<exchangeData>();
+
+        foreach (var item in data)
+        {
+            exchangeData newData = new exchangeData();
+            newData.drzavaAng = item.drzavaAng;
+            newData.sreden = item.sreden;
+            newData.valuta = item.oznaka;
+            newData.date = item.datum;
+
+            listData.Add(newData);
+        }
+
+        return listData;
+    }
+}

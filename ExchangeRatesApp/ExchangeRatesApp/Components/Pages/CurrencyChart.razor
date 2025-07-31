@@ -1,0 +1,127 @@
+﻿@page "/CurrencyChart"
+@using System.Globalization
+@rendermode InteractiveServer
+
+<PageTitle>Currecny chart</PageTitle>
+
+<label >Choose a currency</label>
+    <select >
+    <option > EUR</option>
+    <option > USD</option>
+    <option > GBP</option>
+    </select>
+
+<p>Start Date (dd.mm.yyyy format)</p>
+<input id="startID" @bind="startInput" />
+
+<p>End Date (dd.mm.yyyy format)</p>
+<input id="endID" @bind="endInput" />
+
+<br />
+<button @onclick="ConfirmAndFetch">Get Data</button>
+
+@if (jsonListData == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <DemoContainer >
+        <ApexChart TItem="exchangeData"
+                   Title="Currency Chart">
+
+            <ApexPointSeries TItem="exchangeData"
+                             Items="jsonListData"
+                             Name="Gross Value"
+                             SeriesType="SeriesType.Line"
+                             XValue="@(e => e.date)"
+                             YValue="@(e=>e.sreden)"/>
+
+        </ApexChart>
+    </DemoContainer>
+
+}
+
+
+
+@code {
+    private string startInput;
+    private string endInput;
+    private string startDate = "04.02.2025";
+    private string endDate = "05.02.2025";
+    private List<exchangeData> jsonListData;
+    private ApexChartOptions<exchangeData> options;
+    private string currency = "EUR";
+
+    // private List<Order> Orders { get; set; } = SampleData.GetOrders();
+    //  protected override async Task OnInitializedAsync()
+    // {
+    //      await FetchData(startDate,endDate);
+    // }
+
+    protected override void OnInitialized()
+    {
+        
+    }
+    private async Task ConfirmAndFetch()
+    {
+
+        var startDate = startInput;
+        var endDate = endInput;
+        
+
+        await FetchData(startDate, endDate);
+    }
+
+    public async Task FetchData(string dateStart, string dateEnd)
+    {
+        var httpClient = new HttpClient();
+        //create new http client
+
+        //make get request to the website
+        try
+        {
+            var call = await httpClient.GetAsync("https://www.nbrm.mk/KLServiceNOV/GetExchangeRate?StartDate=" + dateStart + "&EndDate=" + dateEnd + "&format=json");
+
+            var data = await call.Content.ReadAsStringAsync();
+
+            dynamic json = JsonConvert.DeserializeObject(data);
+
+            jsonListData = createJsonClass(json);
+
+        }
+        catch (Exception e)
+        {
+            throw new Exception(e.Message);
+        }
+
+    }
+
+    public class exchangeData
+    {
+        public string valuta { get; set; }
+        public decimal sreden { get; set; }
+        public DateTime date { get; set; }
+
+    }
+
+    public List<exchangeData> createJsonClass(dynamic data)
+    {
+        List<exchangeData> listData = new List<exchangeData>();
+
+        foreach (var item in data)
+        {
+            if(item.oznaka == currency){
+                exchangeData newData = new exchangeData();
+                newData.sreden = item.sreden;
+                newData.valuta = item.oznaka;
+                // parse this into DateTime, because of json file this had some issues thats why its so long, google it for explenation
+                newData.date = DateTime.TryParseExact(item.datum.ToString(), "M/d/yyyy h:mm:ss tt", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate) ? parsedDate : DateTime.MinValue; listData.Add(newData);
+            }   
+        }
+
+        return listData;
+    }
+    
+
+}
