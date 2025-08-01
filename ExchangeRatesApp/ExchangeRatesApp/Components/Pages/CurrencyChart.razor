@@ -4,11 +4,11 @@
 
 <PageTitle>Currecny chart</PageTitle>
 
-<label >Choose a currency</label>
-    <select >
-    <option > EUR</option>
-    <option > USD</option>
-    <option > GBP</option>
+<label >Choose a currency </label>
+    <select @bind="currency" >
+    <option  value="EUR"> EUR</option>
+    <option  value="USD"> USD</option>
+    <option  value="GBP"> GBP</option>
     </select>
 
 <p>Start Date (dd.mm.yyyy format)</p>
@@ -51,7 +51,7 @@ else
     private string endDate = "05.02.2025";
     private List<exchangeData> jsonListData;
     private ApexChartOptions<exchangeData> options;
-    private string currency = "EUR";
+    private string currency = "";
 
     // private List<Order> Orders { get; set; } = SampleData.GetOrders();
     //  protected override async Task OnInitializedAsync()
